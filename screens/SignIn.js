@@ -174,11 +174,11 @@ const SignInScreen = () => {
             <Input
               caption="Should contain at least 8 characters"
               label="re-Password"
-              onChangeText={nextValue => setPassword(nextValue)}
+              onChangeText={nextValue => setCfPassword(nextValue)}
               placeholder="re-Password"
               secureTextEntry={true}
               style={{marginBottom: 8}}
-              value={password}
+              value={cfPassword}
             />
             <Button onPress={handleSignupWithEmail} style={styles.btn}>
               Sign up
@@ -193,7 +193,7 @@ const SignInScreen = () => {
         </Button>
         <Button
           accessoryLeft={GoogleIcon}
-          onPress={() => handleSignInWithGoogle().then(value => {})}
+          onPress={handleSignInWithGoogle}
           style={styles.btn}>
           Login with Google
         </Button>

@@ -140,6 +140,7 @@ const SOSScreen = () => {
                       request_at: new Date().toISOString(),
                       latitude: coords.latitude,
                       longitude: coords.longitude,
+                      helper: 'no-one',
                     })
                     .then(value => {
                       alert('SOS is requested to global');

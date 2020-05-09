@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, createRef} from 'react';
-import {StyleSheet, View, SafeAreaView, Dimensions} from 'react-native';
+import {StyleSheet, View, SafeAreaView, Dimensions, Alert} from 'react-native';
 import {Layout, Text, Card, Button} from '@ui-kitten/components';
 import MapView, {PROVIDER_GOOGLE, Marker, Callout} from 'react-native-maps';
 import {} from '@ui-kitten/components';
@@ -30,9 +30,13 @@ const MapScreen = () => {
           querySnapshot => {
             let loaded = [];
             querySnapshot.docs.forEach(item => {
-              const data = item.data();
+              let data = item.data();
+              const id = item.id;
+              data = Object.assign({}, data, {id});
               if (data.uid !== user.uid) {
-                loaded.push(item.data());
+                if (data.status !== 'success') {
+                  loaded.push(data);
+                }
               }
             });
             setReqs(loaded);
@@ -56,11 +60,26 @@ const MapScreen = () => {
             alignItems: 'flex-end',
             padding: 8,
           }}>
-          {item.helper === 'no-one' && <Button size="small">Help</Button>}
-          {item.helper === user.uid && (
-            <Button status="success" size="small">
-              Success
+          {item.helper === 'no-one' && (
+            <Button onPress={() => handleHelp(index)} size="small">
+              Help
             </Button>
+          )}
+          {item.helper === user.uid && (
+            <View style={{flexDirection: 'row'}}>
+              <Button
+                onPress={() => handleCancel(index)}
+                status="danger"
+                size="small">
+                Cancel
+              </Button>
+              <Button
+                onPress={() => handleSuccess(index)}
+                status="success"
+                size="small">
+                Success
+              </Button>
+            </View>
           )}
         </View>
       )}
@@ -88,6 +107,80 @@ const MapScreen = () => {
     });
   };
 
+  const handleHelp = index => {
+    const target = reqs[index];
+    Alert.alert('Help confirm', 'Are you sure you can help him/her?', [
+      {text: 'No', onPress: () => {}, style: 'cancel'},
+      {
+        text: 'Yes',
+        onPress: () => {
+          firestore()
+            .collection('requests')
+            .doc(target.id)
+            .update({status: 'helped', helper: user.uid})
+            .then(value => {
+              alert('Hurry!, Let help him/her');
+            })
+            .catch(reason => {
+              console.error(reason);
+              alert('Sorry, you cannot help him/her now, please try agin');
+            });
+        },
+      },
+    ]);
+    // console.log(reqs[index]);
+  };
+
+  const handleCancel = index => {
+    // console.log(reqs[index]);
+    const target = reqs[index];
+    Alert.alert('Help confirm', 'Are you sure to cancel to help him/her?', [
+      {text: 'No', onPress: () => {}, style: 'cancel'},
+      {
+        text: 'Yes',
+        onPress: () => {
+          firestore()
+            .collection('requests')
+            .doc(target.id)
+            .update({status: 'waiting', helper: 'no-one'})
+            .then(value => {
+              alert('You cancel to help him/her yet');
+            })
+            .catch(reason => {
+              console.error(reason);
+              alert(
+                'Sorry, you cannot cancel to help him/her now, please try agin',
+              );
+            });
+        },
+      },
+    ]);
+  };
+
+  const handleSuccess = index => {
+    // console.log(reqs[index]);
+    const target = reqs[index];
+    Alert.alert('Help confirm', 'Are you help him/her success?', [
+      {text: 'No', onPress: () => {}, style: 'cancel'},
+      {
+        text: 'Yes',
+        onPress: () => {
+          firestore()
+            .collection('requests')
+            .doc(target.id)
+            .update({status: 'success'})
+            .then(value => {
+              alert('Thank you for helping him/her');
+            })
+            .catch(reason => {
+              console.error(reason);
+              alert('Sorry, you cannot update status now, please try agin');
+            });
+        },
+      },
+    ]);
+  };
+
   return (
     // <View style={styles.container}>
     //   <MapView
@@ -109,8 +202,8 @@ const MapScreen = () => {
             provider={PROVIDER_GOOGLE}
             style={styles.map}
             initialRegion={{
-              latitude: 37.78825,
-              longitude: -122.4324,
+              latitude: current.latitude,
+              longitude: current.longitude,
               latitudeDelta: 0.0922,
               longitudeDelta: 0.0421,
             }}
@@ -152,7 +245,7 @@ const MapScreen = () => {
                 });
               }}
               size="tiny">
-              Current
+              Me
             </Button>
           </Layout>
           {!reqs.length && <Text>Not found any request</Text>}
